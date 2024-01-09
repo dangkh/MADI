@@ -188,12 +188,13 @@ for epoch in range(1, args.epochs + 1):
             for itemBatch in range(len(batchMask)):
                 lenLL = lpos[itemBatch]
                 LL = dpos[itemBatch]
-                # if np.random.randint(1,10) % 3 == 0: continue
-                mPos1 = LL[random.randint(0,lenLL)]
-                batchMask[itemBatch][int(mPos1.item())] = 0
                 # TODO extend to mask more items
-                # mPos2 = LL[random.randint(0,lenLL)]
-                # batchMask[itemBatch][int(mPos2.item())] = 0
+                if np.random.randint(1,10) % 5 == 0: 
+                    mPos1 = LL[random.randint(0,lenLL)]
+                    batchMask[itemBatch][int(mPos1.item())] = 0
+                if np.random.randint(1,10) % 5 == 0: 
+                    mPos2 = LL[random.randint(0,lenLL)]
+                    batchMask[itemBatch][int(mPos2.item())] = 0
 
         maskedItem = np.ones_like(batchMask) - batchMask
         maskedBatch = torch.from_numpy(maskedItem) * batch
