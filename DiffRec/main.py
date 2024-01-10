@@ -208,12 +208,12 @@ for epoch in range(1, args.epochs + 1):
         optimizer.zero_grad()
         losses = diffusion.training_losses(model, remaindItem, args.reweight,  maskedBatch)
         loss = losses["loss"].mean()
-        if args.mask_BCE:
-            prediction = diffusion.p_sample(model, remaindItem , args.sampling_steps, args.sampling_noise, maskedBatch)
-            BCE = -torch.mean(torch.sum(F.log_softmax(prediction, 1) * batch, -1))
-            total_loss += loss + BCE * 0.1
-        else:
-            total_loss += loss
+        # if args.mask_BCE:
+        #     prediction = diffusion.p_sample(model, remaindItem , args.sampling_steps, args.sampling_noise, maskedBatch)
+        #     BCE = -torch.mean(torch.sum(F.log_softmax(prediction, 1) * batch, -1))
+        #     total_loss += loss + BCE * 0.1
+        # else:
+        total_loss += loss
         loss.backward()
         optimizer.step()
     
