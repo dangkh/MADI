@@ -18,11 +18,6 @@ def data_load(train_path, valid_path, test_path):
     train_list = np.load(train_path, allow_pickle=True)
     valid_list = np.load(valid_path, allow_pickle=True)
     test_list = np.load(test_path, allow_pickle=True)
-    limitItemMax = 50000
-    limitUserMax = 50000
-    train_list = removeData(train_list, limitItemMax, limitUserMax)
-    valid_list = removeData(valid_list, limitItemMax, limitUserMax)
-    test_list = removeData(test_list, limitItemMax, limitUserMax)
     uid_max = 0
     iid_max = 0
     train_dict = {}

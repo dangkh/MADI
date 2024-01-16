@@ -135,14 +135,8 @@ def evaluate(data_loader, data_te, mask_his, topN):
         for batch_idx, batchInfo in enumerate(data_loader):
             batch, pos = batchInfo
             lpos, dpos = pos
+            # infer using original data
             batchMask = np.ones_like(batch)
-            for itemBatch in range(len(batchMask)):
-                lenLL = lpos[itemBatch]
-                LL = dpos[itemBatch]
-                mPos1 = LL[random.randint(0,lenLL)]
-                # mPos2 = LL[random.randint(0,lenLL)]
-                # batchMask[itemBatch][int(mPos1.item())] = 0
-                # batchMask[itemBatch][int(mPos2.item())] = 0
 
             maskedItem = np.ones_like(batchMask) - batchMask
             maskedBatch = torch.from_numpy(maskedItem) * batch
@@ -208,11 +202,6 @@ for epoch in range(1, args.epochs + 1):
         optimizer.zero_grad()
         losses = diffusion.training_losses(model, remaindItem, args.reweight,  maskedBatch)
         loss = losses["loss"].mean()
-        # if args.mask_BCE:
-        #     prediction = diffusion.p_sample(model, remaindItem , args.sampling_steps, args.sampling_noise, maskedBatch)
-        #     BCE = -torch.mean(torch.sum(F.log_softmax(prediction, 1) * batch, -1))
-        #     total_loss += loss + BCE * 0.1
-        # else:
         total_loss += loss
         loss.backward()
         optimizer.step()
@@ -225,8 +214,8 @@ for epoch in range(1, args.epochs + 1):
             test_results = evaluate(test_loader, test_y_data, mask_tv, eval(args.topN))
         evaluate_utils.print_results(None, valid_results, test_results)
 
-        if valid_results[1][0] > best_recall: # recall@10 as selection
-            best_recall, best_epoch = valid_results[1][0], epoch
+        if valid_results[1][1] > best_recall: # recall@20 as selection
+            best_recall, best_epoch = valid_results[1][1], epoch
             best_results = valid_results
             best_test_results = test_results
 
