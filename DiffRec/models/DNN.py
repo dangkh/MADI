@@ -8,7 +8,7 @@ class DNN(nn.Module):
     """
     A deep neural network for the reverse diffusion preocess.
     """
-    def __init__(self, in_dims, out_dims, emb_size, time_type="cat", norm=False, dropout=0.5):
+    def __init__(self, in_dims, out_dims, emb_size, time_type="cat", norm=False, dropout=0.5, mask_BCE = False):
         super(DNN, self).__init__()
         self.in_dims = in_dims
         self.out_dims = out_dims
@@ -16,9 +16,9 @@ class DNN(nn.Module):
         self.time_type = time_type
         self.time_emb_dim = emb_size
         self.norm = norm
+        self.mask_BCE = mask_BCE
 
         self.emb_layer = nn.Linear(self.time_emb_dim, self.time_emb_dim)
-        self.guide_layer = nn.Linear(self.in_dims[0], 16)
 
         if self.time_type == "cat":
             in_dims_temp = [self.in_dims[0] + self.time_emb_dim] + self.in_dims[1:]
@@ -66,12 +66,14 @@ class DNN(nn.Module):
     
     def forward(self, x, timesteps, maskInfo):
         time_emb = timestep_embedding(timesteps, self.time_emb_dim).to(x.device)
-        guide_emb = self.guide_layer(maskInfo) * 1e-3
         emb = self.emb_layer(time_emb)
         if self.norm:
             x = F.normalize(x)
         x = self.drop(x)
-        h = torch.cat([x+maskInfo, emb], dim=-1)
+        if self.mask_BCE:
+            h = torch.cat([x+maskInfo, emb], dim=-1)
+        else:
+            h = torch.cat([x, emb], dim=-1)
         for i, layer in enumerate(self.in_layers):
             h = layer(h)
             h = torch.tanh(h)

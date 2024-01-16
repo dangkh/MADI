@@ -110,7 +110,7 @@ diffusion = gd.GaussianDiffusion(mean_type, args.noise_schedule, \
 ### Build MLP ###
 out_dims = eval(args.dims) + [n_item]
 in_dims = out_dims[::-1]
-model = DNN(in_dims, out_dims, args.emb_size, time_type="cat", norm=args.norm).to(device)
+model = DNN(in_dims, out_dims, args.emb_size, time_type="cat", norm=args.norm, mask_BCE = args.mask_BCE).to(device)
 
 optimizer = optim.AdamW(model.parameters(), lr=args.lr, weight_decay=args.weight_decay)
 print("models ready.")
@@ -183,12 +183,9 @@ for epoch in range(1, args.epochs + 1):
                 lenLL = lpos[itemBatch]
                 LL = dpos[itemBatch]
                 # TODO extend to mask more items
-                if np.random.randint(1,10) % 5 == 0: 
+                if np.random.randint(1,10) % 3 == 0: 
                     mPos1 = LL[random.randint(0,lenLL)]
                     batchMask[itemBatch][int(mPos1.item())] = 0
-                if np.random.randint(1,10) % 5 == 0: 
-                    mPos2 = LL[random.randint(0,lenLL)]
-                    batchMask[itemBatch][int(mPos2.item())] = 0
 
         maskedItem = np.ones_like(batchMask) - batchMask
         maskedBatch = torch.from_numpy(maskedItem) * batch

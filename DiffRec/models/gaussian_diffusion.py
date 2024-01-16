@@ -153,6 +153,7 @@ class GaussianDiffusion(nn.Module):
             weight = th.tensor([1.0] * len(target)).to(device)
 
         terms["loss"] = weight * loss
+        terms["output"] = model_output
         
         # update Lt_history & Lt_count
         for t, loss in zip(ts, terms["loss"]):
