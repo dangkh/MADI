@@ -10,7 +10,7 @@ import os
 from os.path import join
 import torch
 from enum import Enum
-from parse import parse_args
+from lightGCN_helper.parse import parse_args
 import multiprocessing
 
 os.environ['KMP_DUPLICATE_LIB_OK'] = 'True'

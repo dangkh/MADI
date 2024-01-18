@@ -6,16 +6,16 @@ Xiangnan He et al. LightGCN: Simplifying and Powering Graph Convolution Network 
 
 Design training and test process
 '''
-import world
+import lightGCN_helper.world as world
 import numpy as np
 import torch
-import utils
-import dataloader
+import lightGCN_helper.utils as utils
+import lightGCN_helper.dataloader as dataloader
 from pprint import pprint
-from utils import timer
+from lightGCN_helper.utils import timer
 from time import time
 from tqdm import tqdm
-import model
+import lightGCN_helper.model as model
 import multiprocessing
 from sklearn.metrics import roc_auc_score
 

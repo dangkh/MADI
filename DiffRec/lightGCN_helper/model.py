@@ -7,9 +7,9 @@ Xiangnan He et al. LightGCN: Simplifying and Powering Graph Convolution Network 
 
 Define models here
 """
-import world
+import lightGCN_helper.world as world
 import torch
-from dataloader import BasicDataset
+from lightGCN_helper.dataloader import BasicDataset
 from torch import nn
 import numpy as np
 

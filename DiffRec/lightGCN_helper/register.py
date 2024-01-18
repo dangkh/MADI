@@ -1,13 +1,13 @@
-import world
-import dataloader
-import model
-import utils
+import lightGCN_helper.world as world
+import lightGCN_helper.dataloader as dataloader
+import lightGCN_helper.model as model
+import lightGCN_helper.utils as utils
 from pprint import pprint
 import os
 path = os.getcwd()
 path = path.split('\\')
 mypath = ''
-for xx in path[:-2]:
+for xx in path[:-1]:
     mypath = mypath + f'{xx}\\'
 if world.dataset in ['baby', 'sport', 'cloth']:
     dataset = dataloader.Loader(path=f"{mypath}datasets\\"+world.dataset)
