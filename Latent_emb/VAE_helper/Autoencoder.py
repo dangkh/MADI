@@ -35,12 +35,14 @@ class AutoEncoder(nn.Module):
             d_in, d_out in zip(self.p_dims[:-1], self.p_dims[1:])])
         
         self.drop = nn.Dropout(dropout)
+        self.predict = nn.Linear(64, 7050)
         self.init_weights()
     
     def forward(self, input):
         mu, logvar = self.encode(input)
         z = self.reparameterize(mu, logvar)
-        return self.decode(z), mu, logvar
+        zz = self.decode(z)
+        return self.predict(zz), zz, mu, logvar
     
 
     def get_encode(self, input):
@@ -101,9 +103,10 @@ class AutoEncoder(nn.Module):
             # Normal Initialization for Biases
             layer.bias.data.normal_(0.0, 0.001)
 
-def loss_function(recon_x, x, mu, logvar, anneal=1.0):
+def loss_function(recon_x, x, mu, logvar, z, emb, anneal=1.0):
     # BCE = F.binary_cross_entropy(recon_x, x)
     BCE = -torch.mean(torch.sum(F.log_softmax(recon_x, 1) * x, -1))
     KLD = -0.5 * torch.mean(torch.sum(1 + logvar - mu.pow(2) - logvar.exp(), dim=1))
 
-    return BCE + anneal * KLD
+
+    return BCE + anneal * KLD 

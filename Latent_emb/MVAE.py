@@ -90,7 +90,7 @@ print('data ready.')
 # item_emb = torch.nn.functional.normalize(item_emb, dim = 0)
 out_dims = eval(args.out_dims)
 in_dims = eval(args.in_dims)
-in_dims.append(n_item)
+in_dims.append(64)
 Autoencoder = AE(in_dims).to(device)
 
 param_num = 0
@@ -131,7 +131,7 @@ def evaluate(data_loader, data_te, mask_his, topN):
             # mask map
             his_data = mask_his[e_idxlist[batch_idx*args.batch_size:batch_idx*args.batch_size+len(batch)]]
 
-            prediction, mu, logvar = Autoencoder(emb)
+            prediction, z, mu, logvar = Autoencoder(emb)
             prediction[his_data.nonzero()] = -np.inf  # mask ui pairs in train & validation set
 
             _, indices = torch.topk(prediction, topN[-1])  # topk category idx
@@ -168,9 +168,9 @@ for epoch in range(1, args.epochs + 1):
         emb = emb.to(device)
         optimizer.zero_grad()
         
-        batch_recon, mu, logvar = Autoencoder(emb)
+        batch_recon, z, mu, logvar = Autoencoder(emb)
 
-        loss = loss_function(batch_recon, batch, mu, logvar)
+        loss = loss_function(batch_recon, batch, mu, logvar, z, emb)
 
         loss.backward()
         total_loss += loss.item() 
@@ -202,6 +202,3 @@ print("End time: ", time.strftime('%Y-%m-%d %H:%M:%S',time.localtime(time.time()
 
 
 
-
-
-sourceFile.close()

@@ -9,10 +9,6 @@ import os
 from torch.utils.data import Dataset
 
 
-def removeData(dataList, numItem, numUser):
-    newData =  dataList[np.where(dataList[:,1] < numItem)]
-    newData =  newData[np.where(newData[:,0] < numUser)]
-    return newData
 
 def data_load(train_path, valid_path, test_path):
     train_list = np.load(train_path, allow_pickle=True)
@@ -77,14 +73,15 @@ class DataDiffusion(Dataset):
     def index2itemEm(self, itemIndx):
         output = []
         clickedItem = torch.where(itemIndx == 1)[0]
-        index = torch.randperm(len(clickedItem))
-        clickedItem = clickedItem[index]
         counter = 0
         for ii in clickedItem:
             output.append(self.embed[ii.item()])
             counter += 1
             if counter > (self.maxItem-1):
                 break
+        output = torch.vstack(output)
+
+        return torch.mean(output, dim = 0)
         compensationNum = self.maxItem -counter
         compensationFeat = torch.zeros(compensationNum*64)
         output.append(compensationFeat)
@@ -97,3 +94,13 @@ class DataDiffusion(Dataset):
 
     def __len__(self):
         return len(self.data)
+
+class DataSimple(Dataset):
+    def __init__(self, data):
+        self.data = data
+
+    def __getitem__(self, index):
+        return index, self.data[index]
+
+    def __len__(self):
+        return len(self.data)        
