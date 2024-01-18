@@ -4,10 +4,13 @@ import model
 import utils
 from pprint import pprint
 import os
-print(os.getcwd())
-stop
+path = os.getcwd()
+path = path.split('\\')
+mypath = ''
+for xx in path[:-2]:
+    mypath = mypath + f'{xx}\\'
 if world.dataset in ['baby', 'sport', 'cloth']:
-    dataset = dataloader.Loader(path="../../data/"+world.dataset)
+    dataset = dataloader.Loader(path=f"{mypath}datasets\\"+world.dataset)
 elif world.dataset == 'lastfm':
     dataset = dataloader.LastFM()
 
