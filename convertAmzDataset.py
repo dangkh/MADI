@@ -1,6 +1,8 @@
 import json
 import numpy as np
-
+'''
+this file convert file .npy to json
+'''
 listF  = ['train', 'test', 'val']
 listOf  = ['train_list', 'test_list', 'valid_list']
 for idx, file in enumerate(listF):
