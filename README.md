@@ -22,6 +22,9 @@ python  LDiffRec.py  --cuda --dataset=baby --data_path=../datasets/baby/ --batch
 
 # DiffRec
 python  main.py  --cuda --dataset=baby --data_path=../datasets/baby/ --batch_size=400  --emb_size=10  --log_name=log --round=1 --lr1=0.001 --mean_type=x0
+
+# L-DiffRec with AE
+python  LDiffRecAE.py  --cuda --dataset=baby --data_path=../datasets/baby/ --batch_size=400  --emb_size=10  --log_name=log --round=1 --lr1=0.001 --mean_type=eps
 ```
 
 ```
