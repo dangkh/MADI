@@ -145,7 +145,7 @@ class GaussianDiffusion(nn.Module):
                 weight = th.where((ts == 0), 1.0, weight)
                 loss = mse
             elif self.mean_type == ModelMeanType.EPSILON:
-                weight = (1 - self.alphas_cumprod[ts]) / ((1-self.alphas_cumprod_prev[ts])**2 * (1-self.betas[ts]))
+                weight = (1 - self.alphas_cumprod[ts]) / (2 * (1-self.alphas_cumprod_prev[ts]) * (1-self.betas[ts]))
                 weight = th.where((ts == 0), 1.0, weight)
                 likelihood = mean_flat((x_start - self._predict_xstart_from_eps(x_t, ts, model_output))**2 / 2.0)
                 loss = th.where((ts == 0), likelihood, mse)
