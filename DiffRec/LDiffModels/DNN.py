@@ -108,4 +108,3 @@ def xavier_normal_initialization(module):
         if module.bias is not None:
             constant_(module.bias.data, 0)         
 
-

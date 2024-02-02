@@ -76,3 +76,48 @@ class DataDiffusion(Dataset):
 
     def __len__(self):
         return len(self.data)
+
+class DataDiffusionEmb(Dataset):
+    def __init__(self, data, embed, maxItem):
+        self.data = data
+        self.embed = embed
+        self.userEmb = []
+        self.maxItem = maxItem
+        sfm = torch.nn.Softmax(dim = 1)
+        self.label = sfm(data)
+        for ii in range(len(self.data)):
+            self.userEmb.append(self.index2itemEm(data[ii]))
+        self.userEmb = torch.vstack(self.userEmb)
+        self.pos = []
+        for line in self.data:
+            ll = torch.where(line == 1)[0]
+            lenLL = len(ll)
+            compensation = len(self.data[0]) - lenLL
+            lcom = torch.zeros(compensation)
+            newLL = torch.cat((ll, lcom), 0)
+            self.pos.append([lenLL, newLL])
+
+    def index2itemEm(self, itemIndx):
+        output = []
+        clickedItem = torch.where(itemIndx == 1)[0]
+        index = torch.randperm(len(clickedItem))
+        clickedItem = clickedItem[index]
+        counter = 0
+        for ii in clickedItem:
+            output.append(self.embed[ii.item()])
+            counter += 1
+            if counter > (self.maxItem-1):
+                break
+        compensationNum = self.maxItem -counter
+        compensationFeat = torch.zeros(compensationNum*64)
+        output.append(compensationFeat)
+        return torch.cat(output)
+
+    def __getitem__(self, index):
+        item = self.data[index]
+        embed = self.userEmb[index]
+        label = self.label[index]
+        return item, embed, label, self.pos[index]
+
+    def __len__(self):
+        return len(self.data)
