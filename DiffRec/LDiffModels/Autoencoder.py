@@ -207,10 +207,7 @@ def xavier_normal_initialization(module):
 
 class AutoEncoderV2(nn.Module):
     """
-    Container module for Multi-VAE.
-
-    Multi-VAE : Variational Autoencoder with Multinomial Likelihood
-    See Variational Autoencoders for Collaborative Filtering
+    Container AE module for AE.
     https://arxiv.org/abs/1802.05814
     """
 

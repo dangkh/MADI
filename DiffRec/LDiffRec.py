@@ -20,7 +20,7 @@ import scipy.sparse as sp
 
 import LDiffModels.gaussian_diffusion as gd
 from LDiffModels.Autoencoder import AutoEncoder as AE
-from LDiffModels.Autoencoder import loss_function
+from LDiffModels.Autoencoder import loss_function, compute_loss
 from LDiffModels.DNN import DNN
 import evaluate_utils
 import data_utils
@@ -124,7 +124,7 @@ assert len(item_emb) == n_item
 out_dims = eval(args.out_dims)
 in_dims = eval(args.in_dims)
 in_dims.append(n_item)
-Autoencoder = AE(in_dims).to(device)
+Autoencoder = AE(item_emb, args.n_cate, in_dims, out_dims, device, args.act_func, args.reparam).to(device)
 
 ### Build Gaussian Diffusion ###
 if args.mean_type == 'x0':
@@ -138,7 +138,7 @@ diffusion = gd.GaussianDiffusion(mean_type, args.noise_schedule, \
         args.noise_scale, args.noise_min, args.noise_max, args.steps, device).to(device)
 
 ### Build MLP ###
-latent_size = in_dims[0]
+latent_size = in_dims[-1]
 mlp_out_dims = eval(args.mlp_dims) + [latent_size]
 mlp_in_dims = mlp_out_dims[::-1]
 model = DNN(mlp_in_dims, mlp_out_dims, args.emb_size, time_type="cat", norm=args.norm).to(device)
@@ -188,24 +188,28 @@ def evaluate(data_loader, data_te, mask_his, topN):
     
     
     with torch.no_grad():
-        for batch_idx, (batch, pos) in enumerate(train_loader):
-            lpos, dpos = pos
-        
+        for batch_idx, (batch,_) in enumerate(train_loader):
             batch = batch.to(device)
 
             # mask map
             his_data = mask_his[e_idxlist[batch_idx*args.batch_size:batch_idx*args.batch_size+len(batch)]]
 
-            batch_encode, mu, logvar = Autoencoder.get_encode(batch)
+            _, batch_latent, _ = Autoencoder.Encode(batch)
+            batch_latent_recon = diffusion.p_sample(model, batch_latent, args.sampling_steps, args.sampling_noise)
+            prediction = Autoencoder.Decode(batch_latent_recon)  # [batch_size, n1_items + n2_items + n3_items]
 
-            batch_latent_recon = diffusion.p_sample(model, batch_encode, args.steps, args.sampling_noise)
-            prediction = Autoencoder.decode(batch_latent_recon)
             prediction[his_data.nonzero()] = -np.inf  # mask ui pairs in train & validation set
 
-            _, indices = torch.topk(prediction, topN[-1])  # topk category idx
+            _, mapped_indices = torch.topk(prediction, topN[-1])  # topk category idx
+
+            if args.n_cate > 1:
+                indices = category_map[mapped_indices]
+            else:
+                indices = mapped_indices
 
             indices = indices.cpu().numpy().tolist()
             predict_items.extend(indices)
+
 
     test_results = evaluate_utils.computeTopNAccuracy(target_items, predict_items, topN)
     return test_results
@@ -219,7 +223,7 @@ save_path = args.save_path + args.dataset + '/'
 mask_train = train_data
 
 for epoch in range(1, args.epochs + 1):
-    if epoch - best_epoch >= 200:
+    if epoch - best_epoch >= 20:
         print('-'*18)
         print('Exiting from training early')
         break
@@ -230,19 +234,18 @@ for epoch in range(1, args.epochs + 1):
     start_time = time.time()
 
     total_loss = 0.0
-    for batch_idx, (batch, pos) in enumerate(train_loader):
-        lpos, dpos = pos
-
+    for batch_idx, (batch, _) in enumerate(train_loader):
         batch = batch.to(device)
         optimizer1.zero_grad()
         optimizer2.zero_grad()
-        
-        batch_encode, mu, logvar = Autoencoder.get_encode(batch)
 
-        terms = diffusion.training_losses(model, batch_encode, args.reweight)
+        batch_cate, batch_latent, vae_kl = Autoencoder.Encode(batch)
+
+        terms = diffusion.training_losses(model, batch_latent, args.reweight)
         elbo = terms["loss"].mean()  # loss from diffusion
-        batch_latent_recon =terms["pred_xstart"]
-        batch_recon = Autoencoder.decode(batch_latent_recon)
+        batch_latent_recon = terms["pred_xstart"]
+
+        batch_recon = Autoencoder.Decode(batch_latent_recon)
 
         if args.anneal_steps > 0:
             lamda = max((1. - update_count / args.anneal_steps) * args.lamda, args.anneal_cap)
@@ -254,15 +257,17 @@ for epoch in range(1, args.epochs + 1):
         else:
             anneal = args.vae_anneal_cap
 
-        loss = loss_function(batch_recon, batch, mu, logvar) 
-
-
+        vae_loss = compute_loss(batch_recon, batch_cate) + anneal * vae_kl  # loss from autoencoder
+        
         if args.reweight:
             loss = lamda * elbo + vae_loss
         else:
             loss = elbo + lamda * vae_loss
+        
+        update_count_vae += 1
+
+        total_loss += loss
         loss.backward()
-        total_loss += loss.item() 
         optimizer1.step()
         optimizer2.step()
 
