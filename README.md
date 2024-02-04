@@ -53,4 +53,16 @@ python convertAmzDataset.py
 ```
 
 ### Latent_Embedding contains models Using Pretrained Item Embedding
-... updating
+
+some baseline models
+```
+# MVAE
+updating
+
+# lightGCN
+python lightGCN.py
+
+# MF 
+python MF.py
+```
+

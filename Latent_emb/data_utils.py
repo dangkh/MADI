@@ -104,3 +104,17 @@ class DataSimple(Dataset):
 
     def __len__(self):
         return len(self.data)        
+
+
+class DataMF(Dataset):
+    def __init__(self, data, embed):
+        self.data = data
+        self.embed = embed
+
+    def __getitem__(self, index):
+        item = self.data[index]
+        Iembed = self.embed
+        return item, Iembed
+
+    def __len__(self):
+        return len(self.data)        
