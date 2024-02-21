@@ -33,7 +33,33 @@ def xavier_normal_initialization(module):
     if isinstance(module, nn.Linear):
         xavier_normal_(module.weight.data)
         if module.bias is not None:
-            constant_(module.bias.data, 0)         
+            constant_(module.bias.data, 0)    
+
+
+class MF_old(nn.Module):
+    """docstring for MF_old"""
+    def __init__(self, num_factors = 16, num_users = None, num_items = None):
+        super(MF_old, self).__init__()
+        self.num_factors = num_factors
+        self.num_users = num_users
+        self.num_items = num_items
+        self.P = nn.Embedding(num_users, num_factors)
+        self.Q = nn.Embedding(num_items, num_factors)
+        # self.user_bias = nn.Embedding(num_users, 1)
+        # self.item_bias = nn.Embedding(num_items, 1)
+
+    def forward(self, user_id, item_id):
+        P_u = self.P(user_id)
+        Q_i = self.Q(item_id)
+        Q_i = torch.transpose(Q_i, 0, 1)
+        # b_u = self.user_bias(user_id)
+        # b_i = self.item_bias(item_id)
+        # print(P_u.shape, Q_i.shape)
+        # stop
+        # outputs = (P_u * Q_i).sum(axis=1) + np.squeeze(b_u) + np.squeeze(b_i)
+        outputs = torch.matmul(P_u, Q_i)
+        return outputs
+        
 
 class GMF(object):
     """docstring for GMF"""

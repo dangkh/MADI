@@ -16,12 +16,14 @@ import torch.utils.data as data
 from torch.utils.data import DataLoader
 import torch.backends.cudnn as cudnn
 import torch.nn.functional as F
-from MF_helper.DNN import DNN
+from MF_helper.DNN import DNN, MF_old
 import evaluate_utils
 import data_utils
 from copy import deepcopy
 
 import random
+from torch.utils.tensorboard import SummaryWriter
+
 random_seed = 1
 torch.manual_seed(random_seed) # cpu
 torch.cuda.manual_seed(random_seed) # gpu
@@ -39,7 +41,7 @@ parser.add_argument('--dataset', type=str, default='baby', help='choose the data
 parser.add_argument('--data_path', type=str, default='../datasets/baby/', help='load data path')
 parser.add_argument('--lr', type=float, default=0.003, help='learning rate')
 parser.add_argument('--weight_decay', type=float, default=0.0)
-parser.add_argument('--batch_size', type=int, default=400)
+parser.add_argument('--batch_size', type=int, default=128)
 parser.add_argument('--epochs', type=int, default=1000, help='upper epoch limit')
 parser.add_argument('--topN', type=str, default='[10, 20, 50, 100]')
 parser.add_argument('--tst_w_val', action='store_true', help='test with validation')
@@ -67,7 +69,6 @@ item_emb = torch.from_numpy(np.load(emb_path, allow_pickle=True))
 emb_path = args.data_path +  'uEmb.npy'
 user_emb = torch.from_numpy(np.load(emb_path, allow_pickle=True))
 resMap = torch.matmul(user_emb, torch.transpose(item_emb, 0, 1))
-
 print(f'{user_emb.shape} user embedding shape, {item_emb.shape} item embedding shape')
 
 train_data, valid_y_data, test_y_data, n_user, n_item = data_utils.data_load(train_path, valid_path, test_path)
@@ -79,7 +80,8 @@ mask_tv = train_data + valid_y_data
 
 print('data ready.')
 embSize = item_emb.shape[-1]
-model = DNN(embSize, n_user).to(device)
+# model = DNN(embSize, n_user).to(device)
+model = MF_old(embSize, n_user, n_item).to(device)
 optimizer = optim.AdamW(model.parameters(), lr=args.lr, weight_decay=1e-5)
 
 def evaluate(data_loader, data_te, mask_his, topN):
@@ -105,10 +107,12 @@ def evaluate(data_loader, data_te, mask_his, topN):
 
     return test_results
 
-
+writer = SummaryWriter()
 best_recall, best_epoch = -100, 0
 mask_train = train_data
 lossFuncion = nn.MSELoss()
+Litems = torch.from_numpy(np.asarray([x for x in range(n_item)]))
+
 for epoch in range(1, args.epochs + 1):
     if epoch - best_epoch >= 20:
         print('-'*18)
@@ -121,24 +125,36 @@ for epoch in range(1, args.epochs + 1):
     total_loss = 0.0
 
     for batch_idx, batch in enumerate(train_loader):
-        print(batch_idx)
-        itemI, itemE = batch
+        users, itemI, itemE = batch
         itemE = itemE.to(device)
         itemI = itemI.to(device)
-        stop
-        pass
+        users = users.to(device)
+        items = Litems.to(device)
+        optimizer.zero_grad()
 
-    batch = torch.FloatTensor(train_data.A)
-    batch = batch.to(device)
-    emb = item_emb
-    emb = emb.to(device)
-    optimizer.zero_grad()
-    output = model(emb)
-    output = torch.transpose(output, 0, 1)
-    loss = lossFuncion(output, batch)
-    loss.backward()
-    total_loss += loss.item() 
-    optimizer.step()
+        output = model(users, items)
+        # print(output.shape)
+        # output = torch.transpose(output, 0, 1)
+        loss = lossFuncion(output, itemI)
+        loss.backward()
+        total_loss += loss.item() 
+        optimizer.step()
+
+    # batch = torch.FloatTensor(train_data.A)
+    # batch = batch.to(device)
+    # emb = item_emb
+    # emb = emb.to(device)
+    # optimizer.zero_grad()
+    # output = model(emb)
+    # output = torch.transpose(output, 0, 1)
+    # loss = lossFuncion(output, batch)
+    # loss.backward()
+    # total_loss += loss.item() 
+    print(total_loss)
+    writer.add_scalar('Loss/train', total_loss, epoch)
+    valid_results = evaluate(test_loader, valid_y_data, mask_train, eval(args.topN))
+    writer.add_scalar('Valid Acc', valid_results[1][1], epoch)
+    # optimizer.step()
    
     if epoch % 5 == 0:
         valid_results = evaluate(test_loader, valid_y_data, mask_train, eval(args.topN))

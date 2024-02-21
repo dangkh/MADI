@@ -115,7 +115,7 @@ class DataMF(Dataset):
     def __getitem__(self, index):
         item = self.data[index]
         Iembed = self.embed
-        return item, Iembed
+        return index, item, Iembed
 
     def __len__(self):
         return len(self.data)        
