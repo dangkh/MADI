@@ -35,3 +35,21 @@ def xavier_normal_initialization(module):
         if module.bias is not None:
             constant_(module.bias.data, 0)         
 
+class GMF(object):
+    """docstring for GMF"""
+    def __init__(self, arg):
+        super(GMF, self).__init__()
+        self.arg = arg
+        
+
+class MLP(object):
+    """docstring for MLP"""
+    def __init__(self, arg):
+        super(MLP, self).__init__()
+        self.arg = arg
+                        
+class NMF(object):
+    """docstring for NMF"""
+    def __init__(self, arg):
+        super(NMF, self).__init__()
+        self.arg = arg

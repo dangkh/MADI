@@ -9,7 +9,7 @@ path = path.split('\\')
 mypath = ''
 for xx in path[:-1]:
     mypath = mypath + f'{xx}\\'
-if world.dataset in ['baby', 'sport', 'cloth']:
+if world.dataset in ['baby', 'sports', 'cloth']:
     dataset = dataloader.Loader(path=f"{mypath}datasets\\"+world.dataset)
 elif world.dataset == 'lastfm':
     dataset = dataloader.LastFM()

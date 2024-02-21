@@ -29,7 +29,7 @@ if not os.path.exists(FILE_PATH):
     os.makedirs(FILE_PATH, exist_ok=True)
 
 config = {}
-all_dataset = ['baby', 'sport', 'cloth']
+all_dataset = ['baby', 'sports', 'cloth']
 all_models  = ['mf', 'lgn']
 # config['batch_size'] = 4096
 config['bpr_batch_size'] = args.bpr_batch

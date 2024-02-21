@@ -110,6 +110,7 @@ class DataMF(Dataset):
     def __init__(self, data, embed):
         self.data = data
         self.embed = embed
+        # self.all = set([i for i in range(num_items)])
 
     def __getitem__(self, index):
         item = self.data[index]

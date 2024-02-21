@@ -37,10 +37,10 @@ def seed_worker(worker_id):
 parser = argparse.ArgumentParser()
 parser.add_argument('--dataset', type=str, default='baby', help='choose the dataset')
 parser.add_argument('--data_path', type=str, default='../datasets/baby/', help='load data path')
-parser.add_argument('--lr', type=float, default=0.0001, help='learning rate')
+parser.add_argument('--lr', type=float, default=0.003, help='learning rate')
 parser.add_argument('--weight_decay', type=float, default=0.0)
 parser.add_argument('--batch_size', type=int, default=400)
-parser.add_argument('--epochs', type=int, default=100, help='upper epoch limit')
+parser.add_argument('--epochs', type=int, default=1000, help='upper epoch limit')
 parser.add_argument('--topN', type=str, default='[10, 20, 50, 100]')
 parser.add_argument('--tst_w_val', action='store_true', help='test with validation')
 parser.add_argument('--cuda', action='store_true', help='use CUDA')
@@ -119,6 +119,15 @@ for epoch in range(1, args.epochs + 1):
     start_time = time.time()
 
     total_loss = 0.0
+
+    for batch_idx, batch in enumerate(train_loader):
+        print(batch_idx)
+        itemI, itemE = batch
+        itemE = itemE.to(device)
+        itemI = itemI.to(device)
+        stop
+        pass
+
     batch = torch.FloatTensor(train_data.A)
     batch = batch.to(device)
     emb = item_emb

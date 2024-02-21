@@ -6,7 +6,7 @@ this file convert file .npy to json
 listF  = ['train', 'test', 'val']
 listOf  = ['train_list', 'test_list', 'valid_list']
 for idx, file in enumerate(listF):
-	f = open(f'./datasets/baby/5-core/{file}.json')
+	f = open(f'./datasets/sports/{file}.json')
 	 
 	# returns JSON object as 
 	# a dictionary
@@ -17,7 +17,7 @@ for idx, file in enumerate(listF):
 		for item in listUI:
 			r.append([int(user), int(item)])
 	r = np.asarray(r)
-	np.save(f'./datasets/baby/5-core/{listOf[idx]}.npy', r)
+	np.save(f'./datasets/sports/{listOf[idx]}.npy', r)
 
 	# Closing file
 	f.close()
