@@ -62,7 +62,5 @@ updating
 # lightGCN
 python lightGCN.py
 
-# MF 
-python MF.py
 ```
 

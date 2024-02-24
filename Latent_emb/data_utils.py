@@ -107,15 +107,36 @@ class DataSimple(Dataset):
 
 
 class DataMF(Dataset):
-    def __init__(self, data, embed):
+    def __init__(self, data, embed, neg_num = 4):
         self.data = data
         self.embed = embed
-        # self.all = set([i for i in range(num_items)])
+        users, items, rating = [], [], []
+        for ii in range(len(self.data)):
+            interact = self.data[ii]
+            pos = np.where(interact == 1)[0]
+            usertmp = [ii] * len(pos)
+            labeltmp = [1.0] * len(pos)
+
+            items.extend(pos)
+            users.extend(usertmp)
+            rating.extend(labeltmp)
+
+            neg = np.where(interact == 0)[0]
+            np.random.shuffle(neg)
+            neg = neg[:neg_num]
+            
+            usertmp = [ii] * len(neg)
+            labeltmp = [0.0] * len(neg)
+            items.extend(neg)
+            users.extend(usertmp)
+            rating.extend(labeltmp)
+        users = np.asarray(users)
+        items = np.asarray(items)
+        rating = np.asarray(rating)
+        self.users, self.items, self.rating = torch.from_numpy(users), torch.from_numpy(items), torch.from_numpy(rating).float()
 
     def __getitem__(self, index):
-        item = self.data[index]
-        Iembed = self.embed
-        return index, item, Iembed
+        return self.users[index], self.items[index], self.rating[index]
 
     def __len__(self):
-        return len(self.data)        
+        return len(self.users)        
