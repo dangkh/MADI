@@ -92,7 +92,6 @@ out_dims = eval(args.out_dims)
 in_dims = eval(args.in_dims)
 in_dims.append(64)
 Autoencoder = AE(in_dims).to(device)
-
 param_num = 0
 AE_num = sum([param.nelement() for param in Autoencoder.parameters()])
 print("Number of parameters:", AE_num)

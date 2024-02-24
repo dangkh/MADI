@@ -7,7 +7,7 @@ import scipy.sparse as sp
 import copy
 import os
 from torch.utils.data import Dataset
-
+from tqdm import tqdm
 
 
 def data_load(train_path, valid_path, test_path):
@@ -59,33 +59,38 @@ class DataDiffusion(Dataset):
         self.embed = embed
         self.userEmb = []
         self.maxItem = len(embed)
-        for ii in range(len(self.data)):
-            self.userEmb.append(self.index2itemEm(data[ii]))
+        # stop
         self.pos = []
         for line in self.data:
-            ll = torch.where(line == 1)[0]
-            lenLL = len(ll)
-            compensation = len(self.data[0]) - lenLL
-            lcom = torch.zeros(compensation)
-            newLL = torch.cat((ll, lcom), 0)
-            self.pos.append([lenLL, newLL])
+            li = torch.where(line == 1)[0]
+            li = li.cpu().detach().numpy()
+            self.pos.append(li)
+
+        print("Preparing Embeding for User")
+        for ii in tqdm(range(len(self.data))):
+            self.userEmb.append(self.index2itemEm(ii))
 
     def index2itemEm(self, itemIndx):
         output = []
-        clickedItem = torch.where(itemIndx == 1)[0]
-        counter = 0
-        for ii in clickedItem:
-            output.append(self.embed[ii.item()])
-            counter += 1
-            if counter > (self.maxItem-1):
-                break
-        output = torch.vstack(output)
+        clickedItem = self.pos[itemIndx]
+        ueb = torch.zeros_like(self.embed)
+        for ii in range(len(clickedItem)):
+            ueb[clickedItem[ii]] = self.embed[clickedItem[ii]]
+        # stop
+        # counter = 0
+        # for ii in clickedItem:
+        #     output.append(self.embed[ii.item()])
+        #     counter += 1
+        #     if counter > (self.maxItem-1):
+        #         break
+        # output = torch.vstack(output)
 
-        return torch.mean(output, dim = 0)
-        compensationNum = self.maxItem -counter
-        compensationFeat = torch.zeros(compensationNum*64)
-        output.append(compensationFeat)
-        return torch.cat(output)
+        # return torch.mean(output, dim = 0)
+        # compensationNum = self.maxItem -counter
+        # compensationFeat = torch.zeros(compensationNum*64)
+        # output.append(compensationFeat)
+        # return torch.cat(output)
+        return ueb
 
     def __getitem__(self, index):
         item = self.data[index]
