@@ -17,15 +17,13 @@ class AutoEncoder(nn.Module):
     https://arxiv.org/abs/1802.05814
     """
 
-    def __init__(self, p_dims, q_dims=None, dropout=0.5):
+    def __init__(self, p_dims, conDim = 16, shrinkSize = 8, dropout=0.5):
         super(AutoEncoder, self).__init__()
         self.p_dims = p_dims
-        if q_dims:
-            assert q_dims[0] == p_dims[-1], "In and Out dimensions must equal to each other"
-            assert q_dims[-1] == p_dims[0], "Latent dimension for p- and q- network mismatches."
-            self.q_dims = q_dims
-        else:
-            self.q_dims = p_dims[::-1]
+        self.conDim = conDim
+        self.shrinkSize = shrinkSize
+        self.numItem = 7050
+        self.q_dims = p_dims[::-1]
 
         # Last dimension of q- network is for mean and variance
         temp_q_dims = self.q_dims[:-1] + [self.q_dims[-1] * 2]
@@ -35,14 +33,20 @@ class AutoEncoder(nn.Module):
             d_in, d_out in zip(self.p_dims[:-1], self.p_dims[1:])])
         
         self.drop = nn.Dropout(dropout)
-        self.predict = nn.Linear(64, 7050)
+        self.reDim = nn.Linear(conDim, shrinkSize)
+        self.predict1 = nn.Linear(self.q_dims[0], 64)
+        self.predict2 = nn.Linear(64, self.numItem)
+        self.recFeat = nn.Linear(shrinkSize, conDim)
         self.init_weights()
     
     def forward(self, input):
-        mu, logvar = self.encode(input)
+        h = F.normalize(input)
+        h = self.reDim(h)
+        h = h.view(-1,self.p_dims[-1])
+        mu, logvar = self.encode(h)
         z = self.reparameterize(mu, logvar)
         zz = self.decode(z)
-        return self.predict(zz), zz, mu, logvar
+        return self.recFeat(zz.view(-1,self.numItem,self.shrinkSize)), zz, mu, logvar, self.predict2(self.predict1(zz))
     
 
     def get_encode(self, input):
@@ -52,8 +56,7 @@ class AutoEncoder(nn.Module):
 
 
     def encode(self, input):
-        h = F.normalize(input)
-        h = self.drop(h)
+        h = self.drop(input)
         
         for i, layer in enumerate(self.q_layers):
             h = layer(h)
@@ -103,10 +106,11 @@ class AutoEncoder(nn.Module):
             # Normal Initialization for Biases
             layer.bias.data.normal_(0.0, 0.001)
 
-def loss_function(recon_x, x, mu, logvar, z, emb, anneal=1.0):
+def loss_function(recon_x, x, mu, logvar, z, anneal=1.0):
     # BCE = F.binary_cross_entropy(recon_x, x)
-    BCE = -torch.mean(torch.sum(F.log_softmax(recon_x, 1) * x, -1))
+    # BCE = -torch.mean(torch.sum(F.log_softmax(recon_x, 1) * x, -1))
+    MSE = F.mse_loss(recon_x, x)
     KLD = -0.5 * torch.mean(torch.sum(1 + logvar - mu.pow(2) - logvar.exp(), dim=1))
 
 
-    return BCE + anneal * KLD 
+    return MSE + anneal * KLD 

@@ -49,8 +49,8 @@ parser.add_argument('--cuda', action='store_true', help='use CUDA')
 parser.add_argument('--gpu', type=str, default='0', help='gpu card ID')
 
 # params for the Autoencoder
-parser.add_argument('--in_dims', type=str, default='[300]', help='the dims for the encoder')
-parser.add_argument('--out_dims', type=str, default='[]', help='the hidden dims for the decoder')
+parser.add_argument('--in_dims', type=str, default='[64]', help='the dims for the encoder')
+parser.add_argument('--reduce_dims', type=int, default='2', help='the dims reduce before input the encoder')
 parser.add_argument('--act_func', type=str, default='tanh', help='activation function for autoencoder')
 parser.add_argument('--lamda', type=float, default=0.05, help='hyper-parameter of multinomial log-likelihood for AE: 0.01, 0.02, 0.03, 0.05')
 parser.add_argument('--optimizer', type=str, default='AdamW', help='optimizer for AE: Adam, AdamW, SGD, Adagrad, Momentum')
@@ -87,11 +87,11 @@ mask_tv = train_data + valid_y_data
 print('data ready.')
 ### Build Autoencoder ###
 
-# item_emb = torch.nn.functional.normalize(item_emb, dim = 0)
-out_dims = eval(args.out_dims)
 in_dims = eval(args.in_dims)
-in_dims.append(64)
-Autoencoder = AE(in_dims).to(device)
+# get shape of item embedding:
+embDim = item_emb.shape[-1]
+in_dims.append(args.reduce_dims * n_item)
+Autoencoder = AE(in_dims, conDim = embDim, shrinkSize = args.reduce_dims).to(device)
 param_num = 0
 AE_num = sum([param.nelement() for param in Autoencoder.parameters()])
 print("Number of parameters:", AE_num)
@@ -120,17 +120,15 @@ def evaluate(data_loader, data_te, mask_his, topN):
     for i in range(e_N):
         target_items.append(data_te[i, :].nonzero()[1].tolist())
     
-    
     with torch.no_grad():
-        for batch_idx, (batch, emb, pos) in enumerate(train_loader):
-            lpos, dpos = pos
+        for batch_idx, (batch, emb) in enumerate(train_loader):
             batch = batch.to(device)
             emb = emb.to(device)
 
             # mask map
             his_data = mask_his[e_idxlist[batch_idx*args.batch_size:batch_idx*args.batch_size+len(batch)]]
 
-            prediction, z, mu, logvar = Autoencoder(emb)
+            batch_recon, z, mu, logvar, prediction = Autoencoder(emb)
             prediction[his_data.nonzero()] = -np.inf  # mask ui pairs in train & validation set
 
             _, indices = torch.topk(prediction, topN[-1])  # topk category idx
@@ -147,9 +145,10 @@ update_count = 0
 update_count_vae = 0
 
 mask_train = train_data
+recLoss = nn.BCEWithLogitsLoss()
 
 listSFBatch = []
-for epoch in range(1, args.epochs + 1):
+for epoch in range(0, 1):
     if epoch - best_epoch >= 200:
         print('-'*18)
         print('Exiting from training early')
@@ -160,20 +159,21 @@ for epoch in range(1, args.epochs + 1):
     start_time = time.time()
 
     total_loss = 0.0
-    for batch_idx, (batch, emb, pos) in enumerate(train_loader):
-        lpos, dpos = pos
-
+    for batch_idx, (batch, emb) in enumerate(train_loader):
         batch = batch.to(device)
         emb = emb.to(device)
         optimizer.zero_grad()
         
-        batch_recon, z, mu, logvar = Autoencoder(emb)
+        batch_recon, z, mu, logvar, pred = Autoencoder(emb)
+        loss1 = loss_function(batch_recon, emb, mu, logvar, z)
+        loss2 = recLoss(pred, batch)
 
-        loss = loss_function(batch_recon, batch, mu, logvar, z, emb)
+        loss = loss1 + loss2
 
         loss.backward()
         total_loss += loss.item() 
         optimizer.step()
+        break
 
     update_count += 1
     

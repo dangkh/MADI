@@ -76,6 +76,8 @@ class DataDiffusion(Dataset):
         ueb = torch.zeros_like(self.embed)
         for ii in range(len(clickedItem)):
             ueb[clickedItem[ii]] = self.embed[clickedItem[ii]]
+        
+
         # stop
         # counter = 0
         # for ii in clickedItem:
@@ -95,7 +97,7 @@ class DataDiffusion(Dataset):
     def __getitem__(self, index):
         item = self.data[index]
         embed = self.userEmb[index]
-        return item, embed, self.pos[index]
+        return item, embed
 
     def __len__(self):
         return len(self.data)
