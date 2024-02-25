@@ -148,7 +148,7 @@ mask_train = train_data
 recLoss = nn.BCEWithLogitsLoss()
 
 listSFBatch = []
-for epoch in range(0, 1):
+for epoch in range(0, args.epochs):
     if epoch - best_epoch >= 200:
         print('-'*18)
         print('Exiting from training early')
@@ -173,7 +173,6 @@ for epoch in range(0, 1):
         loss.backward()
         total_loss += loss.item() 
         optimizer.step()
-        break
 
     update_count += 1
     
