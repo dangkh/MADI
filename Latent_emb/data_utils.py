@@ -102,6 +102,41 @@ class DataDiffusion(Dataset):
     def __len__(self):
         return len(self.data)
 
+class DataDiffusion_mean(Dataset):
+    def __init__(self, data, embed):
+        self.data = data
+        self.embed = embed
+        self.userEmb = []
+        self.maxItem = len(embed)
+        # stop
+        self.pos = []
+        for line in self.data:
+            li = torch.where(line == 1)[0]
+            li = li.cpu().detach().numpy()
+            self.pos.append(li)
+
+        print("Preparing Embeding for User")
+        for ii in tqdm(range(len(self.data))):
+            self.userEmb.append(self.index2itemEm(ii))
+
+    def index2itemEm(self, itemIndx):
+        output = []
+        clickedItem = self.pos[itemIndx]
+        listEmb = []
+        for ii in range(len(clickedItem)):
+            listEmb.append(self.embed[clickedItem[ii]])
+        tmp = torch.vstack(listEmb)
+        ueb = torch.mean(tmp, 0)
+        return ueb
+
+    def __getitem__(self, index):
+        item = self.data[index]
+        embed = self.userEmb[index]
+        return item, embed
+
+    def __len__(self):
+        return len(self.data)
+
 class DataSimple(Dataset):
     def __init__(self, data):
         self.data = data
